@@ -45,9 +45,9 @@ export class CubeInteractionController {
     reaction(
       () => this.cubeState.getRotation(),
       (rotation) => {
-        this.controls.enabled = rotation === null;
         if (rotation === null) {
           this.interaction = null;
+          this.controls.enabled = true;
         }
       },
     );
