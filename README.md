@@ -2,6 +2,8 @@
 
 A quick attempt to build an interactive Rubik's Cube-like toy with Three.js.
 
+Live demo: https://hharnaut.github.io/Rubiks-cube/
+
 This is a hobby project and an experiment more than a polished application. The
 main goal was to see how far a small TypeScript/Three.js prototype could go:
 rendering a cube, animating layer rotations, tracking cube state, and showing a
