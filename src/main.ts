@@ -162,6 +162,14 @@ class BasicWorldDemo {
       this.cubeState.requestMove("x", 0, 1);
     });
 
+    document.getElementById("shuffleBtn")?.addEventListener("click", () => {
+      this.cubeState.requestShuffle();
+    });
+
+    document.getElementById("undoBtn")?.addEventListener("click", () => {
+      this.cubeState.requestUndoAll();
+    });
+
     document.getElementById("debugModeBtn")?.addEventListener("click", () => {
       this.cubeState.setDebugMode(!this.cubeState.getDebugMode());
     });

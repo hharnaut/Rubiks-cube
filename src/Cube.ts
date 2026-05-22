@@ -72,6 +72,7 @@ export class Cube {
                 axis: rotation.axis,
                 direction: Math.sign(target) < 0 ? -1 : 1,
                 layerIndex: rotation.layerIndex,
+                recordHistory: rotation.recordHistory,
               });
             },
           });
@@ -342,6 +343,7 @@ export class Cube {
     axis: Axis,
     direction: -1 | 1,
     layerIndex: number,
+    recordHistory: boolean,
   ) {
     // Detach back to scene
     cubelets.forEach((c) => this.cubeGroup.attach(c));
@@ -350,7 +352,12 @@ export class Cube {
     // for (let step = 0; step < steps % 4; step++) {
     //   this.cubeState.rotate(axis, layerIndex, direction);
     // }
-    this.cubeState.applyMove(axis, layerIndex, steps * direction);
+    this.cubeState.applyMove(
+      axis,
+      layerIndex,
+      steps * direction,
+      recordHistory,
+    );
     this.updatePositions();
   }
 
@@ -362,12 +369,29 @@ export class Cube {
     axis: Axis;
     direction: -1 | 1;
     layerIndex: number;
+    recordHistory: boolean;
   }) {
-    const { committed, steps, group, cubelets, axis, direction, layerIndex } =
-      params;
+    const {
+      committed,
+      steps,
+      group,
+      cubelets,
+      axis,
+      direction,
+      layerIndex,
+      recordHistory,
+    } = params;
 
     if (committed) {
-      this.finishRotation(steps, group, cubelets, axis, direction, layerIndex);
+      this.finishRotation(
+        steps,
+        group,
+        cubelets,
+        axis,
+        direction,
+        layerIndex,
+        recordHistory,
+      );
     } else {
       cubelets.forEach((c) => this.cubeGroup.attach(c));
       this.cubeGroup.remove(group);
@@ -436,6 +460,8 @@ export class Cube {
 
   animateMove(axis: Axis, layerIndex: number, turns: number) {
     if (turns === 0) return;
+    const rotation = this.cubeState.getRotation();
+    if (!rotation) return;
 
     const ninety = Math.PI / 2;
     const target = turns * ninety;
@@ -453,6 +479,7 @@ export class Cube {
           axis,
           direction: Math.sign(turns) as -1 | 1,
           layerIndex,
+          recordHistory: rotation.recordHistory,
         });
       },
     });

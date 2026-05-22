@@ -9,6 +9,7 @@ export type RotationState = {
   readonly angle: number;
   readonly status: RotationStatus;
   readonly turns: number;
+  readonly recordHistory: boolean;
 };
 
 export type Face = "ZP" | "ZN" | "XN" | "XP" | "YP" | "YN";
@@ -52,10 +53,19 @@ export type Cell = {
   stickers: Array<Sticker | null>;
 };
 
+type Move = {
+  axis: Axis;
+  layerIndex: number;
+  turns: number;
+};
+
 export class CubeState {
   private grid: Cell[][][]; // store IDs instead of objects
   private rotation: RotationState | null = null;
   private debugMode: boolean = false;
+  private moveHistory: Move[] = [];
+  private undoing: boolean = false;
+  private shuffleQueue: Move[] = [];
 
   constructor() {
     this.grid = this.createSolvedGrid();
@@ -285,6 +295,7 @@ export class CubeState {
       angle: 0,
       status: "dragging",
       turns: 0,
+      recordHistory: true,
     };
   }
 
@@ -295,6 +306,7 @@ export class CubeState {
 
   finishRotation() {
     this.rotation = null;
+    this.requestNextQueuedMove();
   }
 
   getRotation(): RotationState | null {
@@ -314,7 +326,12 @@ export class CubeState {
     this.rotation = { ...this.rotation, status: "snapping" };
   }
 
-  applyMove(axis: Axis, layerIndex: number, turns: number) {
+  applyMove(
+    axis: Axis,
+    layerIndex: number,
+    turns: number,
+    recordHistory = true,
+  ) {
     if (turns === 0) return;
 
     // normalize to range [-2, 2]
@@ -324,17 +341,120 @@ export class CubeState {
       t = -1;
     }
 
-    const direction = Math.sign(t) as -1 | 1;
+    if (t === 0) {
+      return;
+    }
+
+    const direction = t < 0 ? -1 : 1;
 
     for (let i = 0; i < Math.abs(t); i++) {
       this.rotate(axis, layerIndex, direction);
     }
+
+    if (recordHistory) {
+      this.moveHistory.push({ axis, layerIndex, turns: t });
+    }
   }
 
   requestMove(axis: Axis, layerIndex: number, turns: number) {
+    if (this.rotation || this.undoing || this.shuffleQueue.length > 0) {
+      return;
+    }
+    this.startAnimatedMove({ axis, layerIndex, turns }, true);
+  }
+
+  requestUndoAll() {
+    if (
+      this.rotation ||
+      this.undoing ||
+      this.shuffleQueue.length > 0 ||
+      this.moveHistory.length === 0
+    ) {
+      return;
+    }
+
+    this.undoing = true;
+    this.requestNextQueuedMove();
+  }
+
+  getUndoMoveCount(): number {
+    return this.moveHistory.length;
+  }
+
+  isUndoing(): boolean {
+    return this.undoing;
+  }
+
+  requestShuffle(count = 20) {
+    if (this.rotation || this.undoing || this.shuffleQueue.length > 0) {
+      return;
+    }
+
+    this.shuffleQueue = this.createShuffleMoves(count);
+    this.requestNextQueuedMove();
+  }
+
+  private createShuffleMoves(count: number): Move[] {
+    const axes: Axis[] = ["x", "y", "z"];
+    const moves: Move[] = [];
+    let previousAxis: Axis | null = null;
+    let previousLayerIndex: number | null = null;
+
+    for (let i = 0; i < count; i++) {
+      let axis = axes[Math.floor(Math.random() * axes.length)];
+      let layerIndex = Math.floor(Math.random() * 3);
+
+      while (axis === previousAxis && layerIndex === previousLayerIndex) {
+        axis = axes[Math.floor(Math.random() * axes.length)];
+        layerIndex = Math.floor(Math.random() * 3);
+      }
+
+      const turns = Math.random() < 0.5 ? -1 : 1;
+      moves.push({ axis, layerIndex, turns });
+
+      previousAxis = axis;
+      previousLayerIndex = layerIndex;
+    }
+
+    return moves;
+  }
+
+  private requestNextQueuedMove() {
     if (this.rotation) {
       return;
     }
-    this.rotation = { axis, layerIndex, turns, status: "animating", angle: 0 };
+
+    const shuffleMove = this.shuffleQueue.shift();
+    if (shuffleMove) {
+      requestAnimationFrame(() => {
+        this.startAnimatedMove(shuffleMove, true);
+      });
+      return;
+    }
+
+    if (!this.undoing) {
+      return;
+    }
+
+    const move = this.moveHistory.pop();
+    if (!move) {
+      this.undoing = false;
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      this.startAnimatedMove({ ...move, turns: -move.turns }, false);
+    });
+  }
+
+  private startAnimatedMove(move: Move, recordHistory: boolean) {
+    this.rotation = {
+      axis: move.axis,
+      layerIndex: move.layerIndex,
+      turns: move.turns,
+      status: "animating",
+      angle: 0,
+      recordHistory,
+    };
   }
 }
