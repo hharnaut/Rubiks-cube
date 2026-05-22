@@ -24,7 +24,6 @@ export class CubeInteractionController {
 
   private camera: THREE.Camera;
   private domElement: HTMLElement;
-  private scene: THREE.Scene;
   private controls: OrbitControls;
   private cube: Cube;
 
@@ -33,21 +32,19 @@ export class CubeInteractionController {
   constructor(
     camera: THREE.Camera,
     domElement: HTMLElement,
-    scene: THREE.Scene,
     controls: OrbitControls,
     cubeState: CubeState,
     cube: Cube,
   ) {
     this.camera = camera;
     this.domElement = domElement;
-    this.scene = scene;
     this.cube = cube;
     this.controls = controls;
     this.cubeState = cubeState;
 
-    const dispose = reaction(
+    reaction(
       () => this.cubeState.getRotation(),
-      (rotation, previousRotation) => {
+      (rotation) => {
         this.controls.enabled = rotation === null;
         if (rotation === null) {
           this.interaction = null;

@@ -27,7 +27,7 @@ export class Cube {
 
     this.buildCubelets();
 
-    const dispose1 = reaction(
+    reaction(
       () => this.cubeState.getDebugMode(),
       () => {
         console.log("debug mode reaction");
@@ -35,7 +35,7 @@ export class Cube {
       },
     );
 
-    const dispose = reaction(
+    reaction(
       () => state.getRotation(),
       (rotation, previousRotation) => {
         if (previousRotation === null && rotation !== null) {
@@ -155,48 +155,60 @@ export class Cube {
     // X+
     if (x === 2) {
       const s = createSticker("XP");
-      s.position.x = offset;
-      s.rotation.y = Math.PI / 2;
-      group.add(s);
+      if (s) {
+        s.position.x = offset;
+        s.rotation.y = Math.PI / 2;
+        group.add(s);
+      }
     }
 
     // X-
     if (x === 0) {
       const s = createSticker("XN");
-      s.position.x = -offset;
-      s.rotation.y = -Math.PI / 2;
-      group.add(s);
+      if (s) {
+        s.position.x = -offset;
+        s.rotation.y = -Math.PI / 2;
+        group.add(s);
+      }
     }
 
     // Y+
     if (y === 2) {
       const s = createSticker("YP");
-      s.position.y = offset;
-      s.rotation.x = -Math.PI / 2;
-      group.add(s);
+      if (s) {
+        s.position.y = offset;
+        s.rotation.x = -Math.PI / 2;
+        group.add(s);
+      }
     }
 
     // Y-
     if (y === 0) {
       const s = createSticker("YN");
-      s.position.y = -offset;
-      s.rotation.x = Math.PI / 2;
-      group.add(s);
+      if (s) {
+        s.position.y = -offset;
+        s.rotation.x = Math.PI / 2;
+        group.add(s);
+      }
     }
 
     // Z+
     if (z === 2) {
       const s = createSticker("ZP");
-      s.position.z = offset;
-      group.add(s);
+      if (s) {
+        s.position.z = offset;
+        group.add(s);
+      }
     }
 
     // Z-
     if (z === 0) {
       const s = createSticker("ZN");
-      s.position.z = -offset;
-      s.rotation.y = Math.PI;
-      group.add(s);
+      if (s) {
+        s.position.z = -offset;
+        s.rotation.y = Math.PI;
+        group.add(s);
+      }
     }
 
     // Logical position

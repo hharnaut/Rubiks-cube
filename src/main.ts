@@ -4,12 +4,16 @@ import { CubeInteractionController } from "./CubeInteractionController";
 import { CubeState } from "./CubeState";
 import { Cube } from "./Cube";
 import { CircleDiagram } from "./CircleDiagram";
+import "./style.css";
 
 class BasicWorldDemo {
   private cubeState: CubeState;
   private renderer: THREE.WebGLRenderer;
+  private circleRenderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
+  private circleScene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
+  private circleCamera: THREE.OrthographicCamera;
   private controls: OrbitControls;
   private cube: Cube;
   private circleDiagram: CircleDiagram;
@@ -30,7 +34,17 @@ class BasicWorldDemo {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
+    this.renderer.domElement.id = "cubeView";
     document.body.appendChild(this.renderer.domElement);
+
+    this.circleRenderer = new THREE.WebGLRenderer({
+      antialias: true,
+    });
+    this.circleRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.circleRenderer.setClearColor(0x000000, 1);
+    this.circleRenderer.setPixelRatio(window.devicePixelRatio);
+    this.circleRenderer.domElement.id = "circleDiagramView";
+    document.body.appendChild(this.circleRenderer.domElement);
 
     window.addEventListener(
       "resize",
@@ -48,18 +62,24 @@ class BasicWorldDemo {
     this.camera.position.set(75, 20, 0);
 
     this.scene = new THREE.Scene();
+    this.circleScene = new THREE.Scene();
+    this.circleScene.background = new THREE.Color(0x000000);
     this.cube = new Cube(this.scene, this.cubeState);
     this.scene.add(this.camera);
 
     const axesHelper = new THREE.AxesHelper(5); // size = length of axes
     this.scene.add(axesHelper);
 
-    this.circleDiagram = new CircleDiagram(this.camera, this.cubeState);
-    this.scene.add(this.circleDiagram.object3d);
+    this.circleCamera = new THREE.OrthographicCamera(-4, 4, 4, -4, 0.1, 100);
+    this.circleCamera.position.set(0, 0, 10);
+    this.circleCamera.lookAt(0, 0, 0);
+    this.circleScene.add(this.circleCamera);
 
-    this.circleDiagram.object3d.position.set(0, 0, 3);
+    this.circleDiagram = new CircleDiagram(this.cubeState);
+    this.circleScene.add(this.circleDiagram.object3d);
+    this.resizeCircleRenderer();
+
     // this.circleDiagram.addIntersectionDebugPoints();
-    this.cube.cubeGroup.position.set(0, 0, -3);
 
     let directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight1.position.set(20, 20, 10);
@@ -98,6 +118,13 @@ class BasicWorldDemo {
     const ambientLight = new THREE.AmbientLight(0x101010);
     this.scene.add(ambientLight);
 
+    const circleAmbientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    this.circleScene.add(circleAmbientLight);
+
+    const circleDirectionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    circleDirectionalLight.position.set(0, 0, 10);
+    this.circleScene.add(circleDirectionalLight);
+
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.update();
 
@@ -123,7 +150,6 @@ class BasicWorldDemo {
     this.interaction = new CubeInteractionController(
       this.camera,
       this.renderer.domElement,
-      this.scene,
       this.controls,
       this.cubeState,
       this.cube,
@@ -145,13 +171,28 @@ class BasicWorldDemo {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.resizeCircleRenderer();
+  }
+
+  private resizeCircleRenderer() {
+    const rect = this.circleRenderer.domElement.getBoundingClientRect();
+    this.circleRenderer.setSize(rect.width, rect.height, false);
+
+    const aspect = rect.width / rect.height;
+    const viewSize = 7;
+
+    this.circleCamera.left = (-viewSize * aspect) / 2;
+    this.circleCamera.right = (viewSize * aspect) / 2;
+    this.circleCamera.top = viewSize / 2;
+    this.circleCamera.bottom = -viewSize / 2;
+    this.circleCamera.updateProjectionMatrix();
   }
 
   requestAnimationFrame() {
     requestAnimationFrame(() => {
       this.controls.update();
-      this.circleDiagram.update();
       this.renderer.render(this.scene, this.camera);
+      this.circleRenderer.render(this.circleScene, this.circleCamera);
       this.requestAnimationFrame();
     });
   }

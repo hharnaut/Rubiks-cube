@@ -41,7 +41,6 @@ type Bead = {
 };
 
 export class CircleDiagram {
-  private readonly camera: THREE.Camera;
   private readonly root: THREE.Group;
   private readonly faces: Faces;
   private beadsInRotatingRing: Bead[] | null;
@@ -64,8 +63,7 @@ export class CircleDiagram {
 
   private beads: Map<string, Bead> = new Map();
 
-  constructor(camera: THREE.Camera, cubeState: CubeState) {
-    this.camera = camera;
+  constructor(cubeState: CubeState) {
     this.cubeState = cubeState;
     this.beadsInRotatingRing = null;
     this.beadsInRotatingFace = null;
@@ -84,14 +82,14 @@ export class CircleDiagram {
     this.faces = this.getFaces();
     this.buildBeads(this.faces, this.cubeState.getDebugMode());
 
-    const dispose1 = reaction(
+    reaction(
       () => cubeState.getDebugMode(),
       (debugMode) => {
         this.beads.forEach((bead) => (bead.label.visible = debugMode));
       },
     );
 
-    const dispose = reaction(
+    reaction(
       () => cubeState.getRotation(),
       (rotation, previousRotation) => {
         if (
@@ -159,10 +157,6 @@ export class CircleDiagram {
     return this.root;
   }
 
-  update(): void {
-    this.root.quaternion.copy(this.camera.quaternion);
-  }
-
   /**
    * Returns the natural 3x3x3 intersection structure:
    *
@@ -204,7 +198,7 @@ export class CircleDiagram {
     const group = new THREE.Group();
 
     this.radii.forEach((radius, index) => {
-      const ring = this.createRing(axis, radius, color);
+      const ring = this.createRing(radius, color);
       group.add(ring);
       this.ringMap[axis][index] = ring;
     });
@@ -212,7 +206,7 @@ export class CircleDiagram {
     return group;
   }
 
-  private createRing(axis: Axis, radius: number, color: number): THREE.Mesh {
+  private createRing(radius: number, color: number): THREE.Mesh {
     const geometry = new THREE.TorusGeometry(radius, 0.015, 32, 128);
 
     const material = new THREE.MeshStandardMaterial({
@@ -306,10 +300,7 @@ export class CircleDiagram {
     return new THREE.Vector2(v.x, v.y);
   }
 
-  private createBead(
-    face: Face,
-    sticker: Sticker,
-  ): {
+  private createBead(sticker: Sticker): {
     mesh: THREE.Mesh;
     label: THREE.Sprite;
   } {
@@ -464,7 +455,7 @@ export class CircleDiagram {
             return;
           }
 
-          const { mesh, label } = this.createBead(face, sticker); // or face color
+          const { mesh, label } = this.createBead(sticker);
 
           mesh.position.copy(position);
           label.visible = debugMode;
