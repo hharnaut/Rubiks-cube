@@ -33,7 +33,6 @@ class BasicWorldDemo {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     this.renderer.domElement.id = "cubeView";
     document.body.appendChild(this.renderer.domElement);
@@ -56,7 +55,7 @@ class BasicWorldDemo {
     );
 
     const fov = 45;
-    const aspect = 1920 / 1080;
+    const aspect = this.getCanvasAspect(this.renderer.domElement);
     const near = 1.0;
     const far = 1000.0;
     this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -85,7 +84,7 @@ class BasicWorldDemo {
 
     this.circleDiagram = new CircleDiagram(this.cubeState);
     this.circleScene.add(this.circleDiagram.object3d);
-    this.resizeCircleRenderer();
+    this.resizeRenderers();
 
     // this.circleDiagram.addIntersectionDebugPoints();
 
@@ -177,24 +176,39 @@ class BasicWorldDemo {
   }
 
   onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.resizeRenderers();
+  }
+
+  private resizeRenderers() {
+    this.resizeCubeRenderer();
     this.resizeCircleRenderer();
+  }
+
+  private resizeCubeRenderer() {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.renderer.setSize(rect.width, rect.height, false);
+
+    this.camera.aspect = this.getCanvasAspect(this.renderer.domElement);
+    this.camera.updateProjectionMatrix();
   }
 
   private resizeCircleRenderer() {
     const rect = this.circleRenderer.domElement.getBoundingClientRect();
     this.circleRenderer.setSize(rect.width, rect.height, false);
 
-    const aspect = rect.width / rect.height;
-    const viewSize = 7;
+    const aspect = this.getCanvasAspect(this.circleRenderer.domElement);
+    const viewSize = aspect < 1 ? 8 : 7;
 
     this.circleCamera.left = (-viewSize * aspect) / 2;
     this.circleCamera.right = (viewSize * aspect) / 2;
     this.circleCamera.top = viewSize / 2;
     this.circleCamera.bottom = -viewSize / 2;
     this.circleCamera.updateProjectionMatrix();
+  }
+
+  private getCanvasAspect(canvas: HTMLCanvasElement): number {
+    const rect = canvas.getBoundingClientRect();
+    return rect.width / rect.height;
   }
 
   requestAnimationFrame() {

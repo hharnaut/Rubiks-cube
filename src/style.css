@@ -2,6 +2,7 @@ html,
 body {
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
   background: #000000;
   margin: 0;
   padding: 0;
@@ -20,8 +21,10 @@ button {
 
 #cubeView {
   display: block;
+  height: 100dvh;
   inset: 0;
   position: fixed;
+  width: 100vw;
 }
 
 #circleDiagramView {
@@ -46,5 +49,52 @@ button {
     min-width: 180px;
     right: 16px;
     width: min(48vw, 260px);
+  }
+}
+
+@media (max-width: 800px) and (orientation: portrait) {
+  #cubeView {
+    bottom: 0;
+    height: 50dvh;
+    left: 0;
+    position: fixed;
+    top: auto;
+    width: 100vw;
+  }
+
+  #circleDiagramView {
+    border: 0;
+    bottom: auto;
+    height: 50dvh;
+    left: 0;
+    min-height: 0;
+    min-width: 0;
+    right: auto;
+    top: 0;
+    width: 100vw;
+  }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  #cubeView {
+    bottom: auto;
+    height: 100dvh;
+    left: 0;
+    position: fixed;
+    right: auto;
+    top: 0;
+    width: 50vw;
+  }
+
+  #circleDiagramView {
+    border: 0;
+    bottom: auto;
+    height: 100dvh;
+    left: 50vw;
+    min-height: 0;
+    min-width: 0;
+    right: auto;
+    top: 0;
+    width: 50vw;
   }
 }
