@@ -55,6 +55,12 @@ export class CircleDiagram {
     y: [],
     z: [],
   };
+  private readonly debugRingColors: Record<Axis, number> = {
+    x: 0xff5555,
+    y: 0x55ff55,
+    z: 0x5555ff,
+  };
+  private readonly defaultRingColor = 0xb0b0b0;
 
   private readonly radii = [1.75, 2, 2.25];
   private readonly triangleSide = 2;
@@ -86,6 +92,7 @@ export class CircleDiagram {
       () => cubeState.getDebugMode(),
       (debugMode) => {
         this.beads.forEach((bead) => (bead.label.visible = debugMode));
+        this.updateRingColors(debugMode);
       },
     );
 
@@ -122,6 +129,7 @@ export class CircleDiagram {
               rotation.axis,
               rotation.layerIndex,
               rotation.turns,
+              rotation.durationMs,
             );
           }
         } else if (previousRotation && !rotation) {
@@ -181,16 +189,28 @@ export class CircleDiagram {
   // ----------------------------------
 
   private build(): void {
-    const colors: Record<Axis, number> = {
-      x: 0xff5555,
-      y: 0x55ff55,
-      z: 0x5555ff,
-    };
-
     (["x", "y", "z"] as Axis[]).forEach((axis) => {
-      const group = this.createRingCluster(axis, colors[axis]);
+      const color = this.getRingColor(axis, this.cubeState.getDebugMode());
+      const group = this.createRingCluster(axis, color);
       group.position.copy(this.centers[axis]);
       this.root.add(group);
+    });
+  }
+
+  private getRingColor(axis: Axis, debugMode: boolean): number {
+    return debugMode ? this.debugRingColors[axis] : this.defaultRingColor;
+  }
+
+  private updateRingColors(debugMode: boolean): void {
+    (["x", "y", "z"] as Axis[]).forEach((axis) => {
+      const color = this.getRingColor(axis, debugMode);
+
+      this.ringMap[axis].forEach((ring) => {
+        const material = ring.material as THREE.MeshStandardMaterial;
+        material.color.set(color);
+        material.emissive.set(color);
+        material.needsUpdate = true;
+      });
     });
   }
 
@@ -1110,7 +1130,12 @@ export class CircleDiagram {
     requestAnimationFrame(animate);
   }
 
-  animateMove(axis: Axis, layerIndex: number, turns: number) {
+  animateMove(
+    axis: Axis,
+    layerIndex: number,
+    turns: number,
+    duration: number,
+  ) {
     if (turns === 0) return;
 
     const ninety = Math.PI / 2;
@@ -1123,7 +1148,6 @@ export class CircleDiagram {
 
     // 👇 SNAPSHOT (CRUCIAL)
 
-    const duration = 200;
     const startTime = performance.now();
 
     const animate = (time: number) => {

@@ -4,6 +4,7 @@ import { CubeInteractionController } from "./CubeInteractionController";
 import { CubeState } from "./CubeState";
 import { Cube } from "./Cube";
 import { CircleDiagram } from "./CircleDiagram";
+import { reaction } from "mobx";
 import "./style.css";
 
 class BasicWorldDemo {
@@ -68,7 +69,14 @@ class BasicWorldDemo {
     this.scene.add(this.camera);
 
     const axesHelper = new THREE.AxesHelper(5); // size = length of axes
+    axesHelper.visible = this.cubeState.getDebugMode();
     this.scene.add(axesHelper);
+    reaction(
+      () => this.cubeState.getDebugMode(),
+      (debugMode) => {
+        axesHelper.visible = debugMode;
+      },
+    );
 
     this.circleCamera = new THREE.OrthographicCamera(-4, 4, 4, -4, 0.1, 100);
     this.circleCamera.position.set(0, 0, 10);
@@ -158,10 +166,6 @@ class BasicWorldDemo {
     this.interaction.attach();
     this.requestAnimationFrame();
 
-    document.getElementById("spinBtn")?.addEventListener("click", () => {
-      this.cubeState.requestMove("x", 0, 1);
-    });
-
     document.getElementById("shuffleBtn")?.addEventListener("click", () => {
       this.cubeState.requestShuffle();
     });
@@ -170,9 +174,6 @@ class BasicWorldDemo {
       this.cubeState.requestUndoAll();
     });
 
-    document.getElementById("debugModeBtn")?.addEventListener("click", () => {
-      this.cubeState.setDebugMode(!this.cubeState.getDebugMode());
-    });
   }
 
   onWindowResize() {

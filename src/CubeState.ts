@@ -10,6 +10,7 @@ export type RotationState = {
   readonly status: RotationStatus;
   readonly turns: number;
   readonly recordHistory: boolean;
+  readonly durationMs: number;
 };
 
 export type Face = "ZP" | "ZN" | "XN" | "XP" | "YP" | "YN";
@@ -58,6 +59,9 @@ type Move = {
   layerIndex: number;
   turns: number;
 };
+
+const DEFAULT_MOVE_DURATION_MS = 200;
+const UNDO_MOVE_DURATION_MS = 500;
 
 export class CubeState {
   private grid: Cell[][][]; // store IDs instead of objects
@@ -296,6 +300,7 @@ export class CubeState {
       status: "dragging",
       turns: 0,
       recordHistory: true,
+      durationMs: DEFAULT_MOVE_DURATION_MS,
     };
   }
 
@@ -427,7 +432,7 @@ export class CubeState {
     const shuffleMove = this.shuffleQueue.shift();
     if (shuffleMove) {
       requestAnimationFrame(() => {
-        this.startAnimatedMove(shuffleMove, true);
+        this.startAnimatedMove(shuffleMove, true, DEFAULT_MOVE_DURATION_MS);
       });
       return;
     }
@@ -443,11 +448,19 @@ export class CubeState {
     }
 
     requestAnimationFrame(() => {
-      this.startAnimatedMove({ ...move, turns: -move.turns }, false);
+      this.startAnimatedMove(
+        { ...move, turns: -move.turns },
+        false,
+        UNDO_MOVE_DURATION_MS,
+      );
     });
   }
 
-  private startAnimatedMove(move: Move, recordHistory: boolean) {
+  private startAnimatedMove(
+    move: Move,
+    recordHistory: boolean,
+    durationMs = DEFAULT_MOVE_DURATION_MS,
+  ) {
     this.rotation = {
       axis: move.axis,
       layerIndex: move.layerIndex,
@@ -455,6 +468,7 @@ export class CubeState {
       status: "animating",
       angle: 0,
       recordHistory,
+      durationMs,
     };
   }
 }

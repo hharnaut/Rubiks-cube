@@ -470,6 +470,7 @@ export class Cube {
       axis,
       fromAngle: 0,
       toAngle: target,
+      duration: rotation.durationMs,
       onComplete: () => {
         this.finalizeRotation({
           committed: true,
@@ -489,14 +490,16 @@ export class Cube {
     axis,
     fromAngle,
     toAngle,
+    duration,
     onComplete,
   }: {
     axis: Axis;
     fromAngle: number;
     toAngle: number;
+    duration?: number;
     onComplete: (finalAngle: number) => void;
   }) {
-    const duration = 200;
+    const animationDuration = duration ?? 200;
     const startTime = performance.now();
     const delta = toAngle - fromAngle;
 
@@ -504,7 +507,7 @@ export class Cube {
 
     const animate = (time: number) => {
       const elapsed = time - startTime;
-      const t = Math.min(elapsed / duration, 1);
+      const t = Math.min(elapsed / animationDuration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
 
       const value = fromAngle + delta * eased;
