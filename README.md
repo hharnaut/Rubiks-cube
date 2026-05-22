@@ -22,28 +22,30 @@ second "circle diagram" view of the same movements.
 
 ## Running Locally
 
+This project uses Yarn Classic.
+
 Install dependencies:
 
 ```sh
-npm install
+yarn install
 ```
 
 Start the development server:
 
 ```sh
-npm run dev
+yarn dev
 ```
 
 Build for production:
 
 ```sh
-npm run build
+yarn build
 ```
 
 Preview the production build:
 
 ```sh
-npm run preview
+yarn preview
 ```
 
 ## Notes
