@@ -15,8 +15,7 @@ second "circle diagram" view of the same movements.
 - Keeps a logical cube state separate from the Three.js objects.
 - Shows an independent circle-diagram view of the cube state.
 - Supports animated shuffle.
-- Supports animated undo, unwinding the move history back toward the original
-  configuration.
+- Supports animated solving from the current sticker state using `cubejs`.
 - Includes a hidden debug mode in code for labels, axes, and colored diagram
   rings.
 

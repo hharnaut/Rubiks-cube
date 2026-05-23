@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@types/three": "^0.183.1",
+    "cubejs": "^1.3.2",
     "mobx": "^6.15.0",
     "three": "^0.183.2"
   }

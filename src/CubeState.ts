@@ -1,4 +1,5 @@
 import { makeAutoObservable } from "mobx";
+import { solveCubeState } from "./CubeSolver";
 
 export type Axis = "x" | "y" | "z";
 
@@ -9,7 +10,6 @@ export type RotationState = {
   readonly angle: number;
   readonly status: RotationStatus;
   readonly turns: number;
-  readonly recordHistory: boolean;
   readonly durationMs: number;
 };
 
@@ -60,16 +60,18 @@ type Move = {
   turns: number;
 };
 
+type QueuedMove = Move & {
+  durationMs: number;
+};
+
 const DEFAULT_MOVE_DURATION_MS = 200;
-const UNDO_MOVE_DURATION_MS = 500;
+const SOLVE_MOVE_DURATION_MS = 500;
 
 export class CubeState {
   private grid: Cell[][][]; // store IDs instead of objects
   private rotation: RotationState | null = null;
   private debugMode: boolean = false;
-  private moveHistory: Move[] = [];
-  private undoing: boolean = false;
-  private shuffleQueue: Move[] = [];
+  private moveQueue: QueuedMove[] = [];
 
   constructor() {
     this.grid = this.createSolvedGrid();
@@ -299,7 +301,6 @@ export class CubeState {
       angle: 0,
       status: "dragging",
       turns: 0,
-      recordHistory: true,
       durationMs: DEFAULT_MOVE_DURATION_MS,
     };
   }
@@ -331,12 +332,7 @@ export class CubeState {
     this.rotation = { ...this.rotation, status: "snapping" };
   }
 
-  applyMove(
-    axis: Axis,
-    layerIndex: number,
-    turns: number,
-    recordHistory = true,
-  ) {
+  applyMove(axis: Axis, layerIndex: number, turns: number) {
     if (turns === 0) return;
 
     // normalize to range [-2, 2]
@@ -355,47 +351,42 @@ export class CubeState {
     for (let i = 0; i < Math.abs(t); i++) {
       this.rotate(axis, layerIndex, direction);
     }
-
-    if (recordHistory) {
-      this.moveHistory.push({ axis, layerIndex, turns: t });
-    }
   }
 
   requestMove(axis: Axis, layerIndex: number, turns: number) {
-    if (this.rotation || this.undoing || this.shuffleQueue.length > 0) {
+    if (this.rotation || this.moveQueue.length > 0) {
       return;
     }
-    this.startAnimatedMove({ axis, layerIndex, turns }, true);
-  }
-
-  requestUndoAll() {
-    if (
-      this.rotation ||
-      this.undoing ||
-      this.shuffleQueue.length > 0 ||
-      this.moveHistory.length === 0
-    ) {
-      return;
-    }
-
-    this.undoing = true;
-    this.requestNextQueuedMove();
-  }
-
-  getUndoMoveCount(): number {
-    return this.moveHistory.length;
-  }
-
-  isUndoing(): boolean {
-    return this.undoing;
+    this.startAnimatedMove({ axis, layerIndex, turns }, DEFAULT_MOVE_DURATION_MS);
   }
 
   requestShuffle(count = 20) {
-    if (this.rotation || this.undoing || this.shuffleQueue.length > 0) {
+    if (this.rotation || this.moveQueue.length > 0) {
       return;
     }
 
-    this.shuffleQueue = this.createShuffleMoves(count);
+    this.moveQueue = this.createShuffleMoves(count).map((move) => ({
+      ...move,
+      durationMs: DEFAULT_MOVE_DURATION_MS,
+    }));
+    this.requestNextQueuedMove();
+  }
+
+  requestSolve() {
+    if (this.rotation || this.moveQueue.length > 0) {
+      return;
+    }
+
+    const moves = solveCubeState(this);
+
+    if (moves.length === 0) {
+      return;
+    }
+
+    this.moveQueue = moves.map((move) => ({
+      ...move,
+      durationMs: SOLVE_MOVE_DURATION_MS,
+    }));
     this.requestNextQueuedMove();
   }
 
@@ -429,36 +420,16 @@ export class CubeState {
       return;
     }
 
-    const shuffleMove = this.shuffleQueue.shift();
-    if (shuffleMove) {
+    const move = this.moveQueue.shift();
+    if (move) {
       requestAnimationFrame(() => {
-        this.startAnimatedMove(shuffleMove, true, DEFAULT_MOVE_DURATION_MS);
+        this.startAnimatedMove(move, move.durationMs);
       });
-      return;
     }
-
-    if (!this.undoing) {
-      return;
-    }
-
-    const move = this.moveHistory.pop();
-    if (!move) {
-      this.undoing = false;
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      this.startAnimatedMove(
-        { ...move, turns: -move.turns },
-        false,
-        UNDO_MOVE_DURATION_MS,
-      );
-    });
   }
 
   private startAnimatedMove(
     move: Move,
-    recordHistory: boolean,
     durationMs = DEFAULT_MOVE_DURATION_MS,
   ) {
     this.rotation = {
@@ -467,7 +438,6 @@ export class CubeState {
       turns: move.turns,
       status: "animating",
       angle: 0,
-      recordHistory,
       durationMs,
     };
   }

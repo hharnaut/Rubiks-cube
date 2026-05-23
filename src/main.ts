@@ -169,10 +169,9 @@ class BasicWorldDemo {
       this.cubeState.requestShuffle();
     });
 
-    document.getElementById("undoBtn")?.addEventListener("click", () => {
-      this.cubeState.requestUndoAll();
+    document.getElementById("solveBtn")?.addEventListener("click", () => {
+      this.cubeState.requestSolve();
     });
-
   }
 
   onWindowResize() {

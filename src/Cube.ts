@@ -72,7 +72,6 @@ export class Cube {
                 axis: rotation.axis,
                 direction: Math.sign(target) < 0 ? -1 : 1,
                 layerIndex: rotation.layerIndex,
-                recordHistory: rotation.recordHistory,
               });
             },
           });
@@ -232,7 +231,6 @@ export class Cube {
     ctx.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
     ctx.fillRect(0, 0, size, size);
 
-    // 👇 only draw text if debugMode is ON
     if (this.cubeState.getDebugMode()) {
       ctx.fillStyle = "black";
       ctx.font = "bold 72px Arial";
@@ -241,8 +239,6 @@ export class Cube {
 
       ctx.fillText(text, size / 2, size / 2);
     }
-
-    ctx.fillText(text, size / 2, size / 2);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
@@ -343,7 +339,6 @@ export class Cube {
     axis: Axis,
     direction: -1 | 1,
     layerIndex: number,
-    recordHistory: boolean,
   ) {
     // Detach back to scene
     cubelets.forEach((c) => this.cubeGroup.attach(c));
@@ -352,12 +347,7 @@ export class Cube {
     // for (let step = 0; step < steps % 4; step++) {
     //   this.cubeState.rotate(axis, layerIndex, direction);
     // }
-    this.cubeState.applyMove(
-      axis,
-      layerIndex,
-      steps * direction,
-      recordHistory,
-    );
+    this.cubeState.applyMove(axis, layerIndex, steps * direction);
     this.updatePositions();
   }
 
@@ -369,7 +359,6 @@ export class Cube {
     axis: Axis;
     direction: -1 | 1;
     layerIndex: number;
-    recordHistory: boolean;
   }) {
     const {
       committed,
@@ -379,7 +368,6 @@ export class Cube {
       axis,
       direction,
       layerIndex,
-      recordHistory,
     } = params;
 
     if (committed) {
@@ -390,7 +378,6 @@ export class Cube {
         axis,
         direction,
         layerIndex,
-        recordHistory,
       );
     } else {
       cubelets.forEach((c) => this.cubeGroup.attach(c));
@@ -480,7 +467,6 @@ export class Cube {
           axis,
           direction: Math.sign(turns) as -1 | 1,
           layerIndex,
-          recordHistory: rotation.recordHistory,
         });
       },
     });
